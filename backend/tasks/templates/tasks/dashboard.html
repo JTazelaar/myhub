@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#111b2e; --muted:#9fb0c7; --text:#e8eef7;
+      --line:#1f2d48; --btn:#2b63ff; --btn2:#2a3550;
+      --good:#22c55e; --warn:#fbbf24;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 20% -10%, #1a2a4a 0%, transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, #172b55 0%, transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    .wrap{max-width:980px;margin:0 auto;padding:28px 18px 60px}
+    .top{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:16px; margin-bottom:18px;
+    }
+    h1{margin:0;font-size:28px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;margin-top:6px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .card h2{margin:0 0 12px 0;font-size:16px}
+    form.add{
+      display:grid; grid-template-columns: 1fr 140px 110px; gap:10px;
+      margin:10px 0 6px 0;
+    }
+    @media (max-width:640px){ form.add{grid-template-columns:1fr; } }
+    input, select{
+      width:100%; padding:10px 12px;
+      border-radius:12px; border:1px solid var(--line);
+      background:#0e1830; color:var(--text);
+      outline:none;
+    }
+    input::placeholder{color:#6f87a6}
+    .btn{
+      border:0; border-radius:12px; padding:10px 12px;
+      background:var(--btn); color:white; font-weight:600;
+      cursor:pointer;
+    }
+    .btn:active{transform:translateY(1px)}
+    .list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+    .item{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:10px 12px;
+      border:1px solid var(--line);
+      background:#0e1830;
+      border-radius:12px;
+    }
+    .left{display:flex;align-items:center;gap:10px;min-width:0}
+    .badge{
+      font-size:12px; padding:4px 8px; border-radius:999px;
+      border:1px solid var(--line); color:var(--muted);
+      flex:0 0 auto;
+    }
+    .title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .actions{display:flex;gap:8px;flex:0 0 auto}
+    .linkbtn{
+      text-decoration:none; font-size:12px; font-weight:600;
+      padding:7px 10px; border-radius:10px;
+      background:var(--btn2); border:1px solid var(--line);
+      color:var(--text);
+    }
+    .done{opacity:.7}
+    .mark{background:rgba(34,197,94,.15); border-color:rgba(34,197,94,.35)}
+    .undo{background:rgba(251,191,36,.14); border-color:rgba(251,191,36,.35)}
+    .empty{color:var(--muted);font-size:13px;margin:0}
+    .hint{color:var(--muted);font-size:12px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Local-only • Admin-first</div>
+      </div>
+      <a class="linkbtn" href="/admin/">Admin</a>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Quick add</h2>
+        <form class="add" method="post">
+          {% csrf_token %}
+          <input name="title" placeholder="Add a task (e.g., Review STP timers)" />
+          <select name="priority">
+            <option value="1">Priority 1</option>
+            <option value="2">Priority 2</option>
+            <option value="3" selected>Priority 3</option>
+            <option value="4">Priority 4</option>
+            <option value="5">Priority 5</option>
+          </select>
+          <button class="btn" type="submit">Add</button>
+        </form>
+        <div class="hint">Tip: keep titles short. You can add notes later in /admin.</div>
+      </div>
+
+      <div class="card">
+        <h2>Done (recent)</h2>
+        <ul class="list">
+          {% for task in done_tasks %}
+            <li class="item done">
+              <div class="left">
+                <span class="badge">done</span>
+                <div class="title">{{ task.title }}</div>
+              </div>
+              <div class="actions">
+                <a class="linkbtn undo" href="/tasks/{{ task.id }}/toggle/">Undo</a>
+              </div>
+            </li>
+          {% empty %}
+            <p class="empty">No completed tasks yet.</p>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card" style="grid-column:1 / -1;">
+        <h2>Open</h2>
+        <ul class="list">
+          {% for task in open_tasks %}
+            <li class="item">
+              <div class="left">
+                <span class="badge">p{{ task.priority }}</span>
+                <div class="title">{{ task.title }}</div>
+              </div>
+              <div class="actions">
+                <a class="linkbtn mark" href="/tasks/{{ task.id }}/toggle/">Mark done</a>
+              </div>
+            </li>
+          {% empty %}
+            <p class="empty">No open tasks.</p>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

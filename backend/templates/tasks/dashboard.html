@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Tasks</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <input name="title" placeholder="New task" />
+        <select name="priority">
+            <option value="1">High</option>
+            <option value="3" selected>Normal</option>
+            <option value="5">Low</option>
+        </select>
+        <button type="submit">Add</button>
+    </form>
+
+    <h2>Open</h2>
+    <ul>
+        {% for task in open_tasks %}
+            <li>
+              [{{ task.priority }}] {{ task.title }}
+              <a href="/tasks/{{ task.id }}/toggle/">Mark done</a>
+            </li>
+        {% empty %}
+            <li>No open tasks</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Done (recent)</h2>
+    <ul>
+        {% for task in done_tasks %}
+            <li>
+              {{ task.title }}
+              <a href="/tasks/{{ task.id }}/toggle/">Undo</a>
+            </li>
+        {% empty %}
+            <li>No completed tasks</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+

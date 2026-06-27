@@ -106,7 +106,7 @@ function TradeSide({
             <button
               type="button"
               onClick={() => onRemove(p.id)}
-              className="text-zinc-500 hover:text-red-600"
+              className="-my-2 px-2 py-2 text-zinc-500 hover:text-red-600"
             >
               Remove
             </button>

@@ -1,0 +1,32 @@
+name: Sleeper Trade Import
+
+on:
+  schedule:
+    # Every Monday at 6am UTC (during NFL season, Aug–Feb)
+    - cron: "0 6 * * 1"
+  workflow_dispatch: # allow manual triggers from GitHub UI
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fantasy-trade-calculator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: fantasy-trade-calculator/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Sleeper import
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SLEEPER_LEAGUE_IDS: ${{ secrets.SLEEPER_LEAGUE_IDS }}
+        run: npm run import:sleeper

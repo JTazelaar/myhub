@@ -56,13 +56,14 @@ model PlayerValue {
   id         Int      @id @default(autoincrement())
   playerId   Int
   snapshotId Int
+  source     String   // "fantasycalc" | "keeptradecut" | "manual" | future sources
   value      Int
   createdAt  DateTime @default(now())
 
   player   Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
   snapshot RankingSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
-  @@unique([playerId, snapshotId])
+  @@unique([playerId, snapshotId, source])
   @@map("player_values")
 }
 

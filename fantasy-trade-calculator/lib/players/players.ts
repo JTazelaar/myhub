@@ -23,14 +23,14 @@ export async function createPlayer(input: {
   });
 }
 
-/** Sets a player's value in the current (latest) snapshot, creating a default snapshot if none exists yet. */
+/** Sets a player's manual value override in the current snapshot. */
 export async function setPlayerValue(playerId: number, value: number) {
   const snapshot = await getOrCreateCurrentSnapshot();
 
   return prisma.playerValue.upsert({
-    where: { playerId_snapshotId: { playerId, snapshotId: snapshot.id } },
+    where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "manual" } },
     update: { value },
-    create: { playerId, snapshotId: snapshot.id, value },
+    create: { playerId, snapshotId: snapshot.id, source: "manual", value },
   });
 }
 

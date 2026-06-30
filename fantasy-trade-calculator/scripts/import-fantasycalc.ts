@@ -79,9 +79,9 @@ async function main() {
       await prisma.$transaction(
         updates.map(({ playerId, value }) =>
           prisma.playerValue.upsert({
-            where: { playerId_snapshotId: { playerId, snapshotId: snapshot.id } },
+            where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "fantasycalc" } },
             update: { value },
-            create: { playerId, snapshotId: snapshot.id, value },
+            create: { playerId, snapshotId: snapshot.id, source: "fantasycalc", value },
           }),
         ),
       );

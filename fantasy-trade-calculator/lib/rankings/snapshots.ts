@@ -13,7 +13,16 @@ export async function listSnapshots() {
   });
 }
 
-/** Maps playerId -> value for the most recent snapshot. Empty if no snapshot exists yet. */
+// Priority order for the "canonical" value used by the calculator.
+// manual overrides beat automated imports; fantasycalc is the primary source.
+const SOURCE_PRIORITY: Record<string, number> = {
+  manual: 0,
+  fantasycalc: 1,
+  keeptradecut: 2,
+};
+
+/** Maps playerId -> value for the most recent snapshot. Empty if no snapshot exists yet.
+ *  When a player has multiple source values, the highest-priority source wins. */
 export async function getLatestValuesMap(): Promise<Map<number, number>> {
   const snapshot = await getLatestSnapshot();
   if (!snapshot) return new Map();
@@ -22,7 +31,16 @@ export async function getLatestValuesMap(): Promise<Map<number, number>> {
     where: { snapshotId: snapshot.id },
   });
 
-  return new Map(values.map((v) => [v.playerId, v.value]));
+  const best = new Map<number, { value: number; priority: number }>();
+  for (const v of values) {
+    const priority = SOURCE_PRIORITY[v.source] ?? 99;
+    const existing = best.get(v.playerId);
+    if (!existing || priority < existing.priority) {
+      best.set(v.playerId, { value: v.value, priority });
+    }
+  }
+
+  return new Map([...best.entries()].map(([id, { value }]) => [id, value]));
 }
 
 /** Returns the latest snapshot, creating a default first one if none exists yet. */
@@ -57,8 +75,6 @@ export async function createNextSnapshot(input: {
     },
   });
 
-  // Carry forward the previous week's values so the new week starts with a
-  // full set of values that the admin can then tweak, instead of blank.
   if (previous) {
     const previousValues = await prisma.playerValue.findMany({
       where: { snapshotId: previous.id },
@@ -69,6 +85,7 @@ export async function createNextSnapshot(input: {
         data: previousValues.map((v) => ({
           playerId: v.playerId,
           snapshotId: snapshot.id,
+          source: v.source,
           value: v.value,
         })),
       });

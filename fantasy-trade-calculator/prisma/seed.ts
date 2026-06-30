@@ -51,9 +51,9 @@ async function main() {
     });
 
     await prisma.playerValue.upsert({
-      where: { playerId_snapshotId: { playerId: player.id, snapshotId: snapshot.id } },
+      where: { playerId_snapshotId_source: { playerId: player.id, snapshotId: snapshot.id, source: "manual" } },
       update: { value: p.value },
-      create: { playerId: player.id, snapshotId: snapshot.id, value: p.value },
+      create: { playerId: player.id, snapshotId: snapshot.id, source: "manual", value: p.value },
     });
   }
 

@@ -15,6 +15,9 @@ export default async function AdminPlayersPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Players</h1>
         <div className="flex items-center gap-4">
+          <Link href="/admin/rankings" className="text-sm font-medium text-blue-600 hover:underline">
+            Rankings →
+          </Link>
           <Link href="/admin/import" className="text-sm font-medium text-blue-600 hover:underline">
             Import →
           </Link>

@@ -10,6 +10,7 @@
     "postinstall": "prisma generate",
     "import:fantasycalc": "tsx scripts/import-fantasycalc.ts",
     "import:sleeper": "tsx scripts/import-sleeper.ts",
+    "import:keeptradecut": "tsx scripts/import-keeptradecut.ts",
     "find-leagues": "tsx scripts/find-sleeper-leagues.ts"
   },
   "dependencies": {

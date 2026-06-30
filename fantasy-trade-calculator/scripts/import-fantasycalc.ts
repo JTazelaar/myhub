@@ -4,7 +4,7 @@
  *
  * FantasyCalc aggregates 2.6M+ real trades to produce market-consensus
  * player values, updated multiple times per day. This script fetches those
- * values for standard 12-team PPR redraft and maps them onto our 1–99 scale
+ * values for standard 12-team PPR redraft and maps them onto our 1-99 scale
  * (top player = 99, everyone else scaled linearly).
  *
  * Usage:
@@ -79,9 +79,9 @@ async function main() {
       await prisma.$transaction(
         updates.map(({ playerId, value }) =>
           prisma.playerValue.upsert({
-            where: { playerId_snapshotId: { playerId, snapshotId: snapshot.id } },
+            where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "fantasycalc" } },
             update: { value },
-            create: { playerId, snapshotId: snapshot.id, value },
+            create: { playerId, snapshotId: snapshot.id, source: "fantasycalc", value },
           }),
         ),
       );

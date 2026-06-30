@@ -24,6 +24,7 @@ model Player {
   @@map("players")
 }
 
+// Alternate names a player may be imported/searched under (e.g. "Pat Mahomes").
 model PlayerAlias {
   id       Int    @id @default(autoincrement())
   playerId Int
@@ -35,6 +36,8 @@ model PlayerAlias {
   @@map("player_aliases")
 }
 
+// One per ranking week. PlayerValue rows are grouped under a snapshot so
+// past weeks are never overwritten when values change.
 model RankingSnapshot {
   id        Int      @id @default(autoincrement())
   season    Int
@@ -53,13 +56,14 @@ model PlayerValue {
   id         Int      @id @default(autoincrement())
   playerId   Int
   snapshotId Int
+  source     String   // "fantasycalc" | "keeptradecut" | "manual" | future sources
   value      Int
   createdAt  DateTime @default(now())
 
   player   Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
   snapshot RankingSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
-  @@unique([playerId, snapshotId])
+  @@unique([playerId, snapshotId, source])
   @@map("player_values")
 }
 
@@ -77,6 +81,8 @@ model MatchupVote {
   @@map("matchup_votes")
 }
 
+// Reserved for future bulk/CSV/API imports of players or values. Not yet
+// wired to any UI in V1.
 model ImportRun {
   id         Int       @id @default(autoincrement())
   source     String

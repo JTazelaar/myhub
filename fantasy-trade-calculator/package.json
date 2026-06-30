@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
+    "import:fantasycalc": "tsx scripts/import-fantasycalc.ts",
     "import:sleeper": "tsx scripts/import-sleeper.ts",
     "find-leagues": "tsx scripts/find-sleeper-leagues.ts"
   },

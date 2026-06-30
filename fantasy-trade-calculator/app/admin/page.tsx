@@ -14,9 +14,14 @@ export default async function AdminPlayersPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Players</h1>
-        <Link href="/admin/snapshots" className="text-sm font-medium text-blue-600 hover:underline">
-          Manage snapshots →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/import" className="text-sm font-medium text-blue-600 hover:underline">
+            Import →
+          </Link>
+          <Link href="/admin/snapshots" className="text-sm font-medium text-blue-600 hover:underline">
+            Manage snapshots →
+          </Link>
+        </div>
       </div>
 
       <form

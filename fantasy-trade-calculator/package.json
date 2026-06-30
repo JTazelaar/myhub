@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "import:sleeper": "tsx scripts/import-sleeper.ts",
+    "find-leagues": "tsx scripts/find-sleeper-leagues.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

@@ -9,6 +9,8 @@ on:
 jobs:
   import:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     defaults:
       run:
         working-directory: fantasy-trade-calculator
@@ -24,6 +26,4 @@ jobs:
         run: npm install
 
       - name: Run FantasyCalc import
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run import:fantasycalc

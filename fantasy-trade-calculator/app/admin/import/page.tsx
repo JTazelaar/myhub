@@ -21,18 +21,40 @@ export default async function ImportPage() {
         </Link>
       </div>
 
-      {/* Setup instructions */}
+      {/* FantasyCalc */}
       <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Setup</h2>
+        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          FantasyCalc{" "}
+          <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            recommended
+          </span>
+        </h2>
         <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-          The import script pulls completed trades from your Sleeper leagues and nudges player
-          values toward market consensus. Run it weekly via GitHub Actions.
+          Pulls market-consensus values derived from 2.6M+ real trades. Free public API, no
+          configuration needed. Runs automatically every day at 7am UTC.
+        </p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          To run manually:{" "}
+          <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            npm run import:fantasycalc
+          </code>
+        </p>
+      </div>
+
+      {/* Sleeper */}
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Sleeper leagues
+        </h2>
+        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+          Pulls trades from your own Sleeper leagues and applies a small nudge on top of the base
+          values. Useful for personalizing to your league&apos;s trade market. Requires setup.
         </p>
         <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
           <li>
-            Find your Sleeper league IDs:
+            Find your league IDs:
             <code className="ml-1 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
-              npx tsx scripts/find-sleeper-leagues.ts &lt;your-username&gt;
+              npm run find-leagues &lt;your-sleeper-username&gt;
             </code>
           </li>
           <li>
@@ -40,20 +62,14 @@ export default async function ImportPage() {
             <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
               SLEEPER_LEAGUE_IDS
             </code>{" "}
-            to your Vercel environment variables and GitHub Actions secrets.
+            to your GitHub Actions secrets (Settings → Secrets → Actions).
           </li>
           <li>
             The{" "}
             <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
               sleeper-import
             </code>{" "}
-            GitHub Actions workflow runs automatically every Monday at 6am UTC.
-          </li>
-          <li>
-            To run manually:{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
-              npm run import:sleeper
-            </code>
+            workflow then runs every Monday at 6am UTC, or trigger it manually.
           </li>
         </ol>
       </div>

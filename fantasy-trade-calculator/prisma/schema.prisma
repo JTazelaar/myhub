@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  position  String
+  team      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aliases       PlayerAlias[]
+  values        PlayerValue[]
+  votesAsA      MatchupVote[] @relation("PlayerA")
+  votesAsB      MatchupVote[] @relation("PlayerB")
+  votesAsWinner MatchupVote[] @relation("Winner")
+
+  @@map("players")
+}
+
+model PlayerAlias {
+  id       Int    @id @default(autoincrement())
+  playerId Int
+  alias    String
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, alias])
+  @@map("player_aliases")
+}
+
+model RankingSnapshot {
+  id        Int      @id @default(autoincrement())
+  season    Int
+  week      Int
+  label     String
+  notes     String?
+  createdAt DateTime @default(now())
+
+  values PlayerValue[]
+
+  @@unique([season, week])
+  @@map("ranking_snapshots")
+}
+
+model PlayerValue {
+  id         Int      @id @default(autoincrement())
+  playerId   Int
+  snapshotId Int
+  value      Int
+  createdAt  DateTime @default(now())
+
+  player   Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  snapshot RankingSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, snapshotId])
+  @@map("player_values")
+}
+
+model MatchupVote {
+  id        Int      @id @default(autoincrement())
+  playerAId Int
+  playerBId Int
+  winnerId  Int
+  createdAt DateTime @default(now())
+
+  playerA Player @relation("PlayerA", fields: [playerAId], references: [id], onDelete: Cascade)
+  playerB Player @relation("PlayerB", fields: [playerBId], references: [id], onDelete: Cascade)
+  winner  Player @relation("Winner", fields: [winnerId], references: [id], onDelete: Cascade)
+
+  @@map("matchup_votes")
+}
+
+model ImportRun {
+  id         Int       @id @default(autoincrement())
+  source     String
+  status     String
+  summary    String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@map("import_runs")
+}

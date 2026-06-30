@@ -15,7 +15,7 @@ export default async function ImportPage() {
       <AdminNotice />
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Import</h1>
+        <h1 className="text-2xl font-bold">Import History</h1>
         <Link href="/admin" className="text-sm font-medium text-blue-600 hover:underline">
           ← Players
         </Link>
@@ -87,9 +87,7 @@ export default async function ImportPage() {
               <div key={run.id} className="flex flex-col gap-1 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                      {run.source}
-                    </span>
+                    <SourceBadge source={run.source} />
                     <span className="text-sm font-medium">
                       {run.startedAt.toLocaleString("en-US", {
                         month: "short",
@@ -111,6 +109,18 @@ export default async function ImportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SourceBadge({ source }: { source: string }) {
+  const labels: Record<string, string> = {
+    fantasycalc: "FantasyCalc",
+    sleeper: "Sleeper",
+  };
+  return (
+    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+      {labels[source] ?? source}
+    </span>
   );
 }
 

@@ -11,13 +11,55 @@ export type CalculatorPlayer = {
   value: number;
 };
 
+const ESPN_ABBR: Record<string, string> = {
+  ARI: "ari", ATL: "atl", BAL: "bal", BUF: "buf", CAR: "car",
+  CHI: "chi", CIN: "cin", CLE: "cle", DAL: "dal", DEN: "den",
+  DET: "det", GB:  "gb",  HOU: "hou", IND: "ind", JAX: "jac",
+  KC:  "kc",  LAC: "lac", LAR: "lar", LV:  "lvr", MIA: "mia",
+  MIN: "min", NE:  "ne",  NO:  "no",  NYG: "nyg", NYJ: "nyj",
+  PHI: "phi", PIT: "pit", SEA: "sea", SF:  "sf",  TB:  "tb",
+  TEN: "ten", WAS: "wsh",
+};
+
+function TeamLogo({ team, size = 20 }: { team: string | null; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const abbr = team ? ESPN_ABBR[team] : null;
+  if (!abbr || failed) return null;
+  return (
+    <img
+      src={`https://a.espncdn.com/i/teamlogos/nfl/500/${abbr}.png`}
+      alt={team!}
+      width={size}
+      height={size}
+      className="shrink-0 object-contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function TradeCalculator({ players }: { players: CalculatorPlayer[] }) {
   const [sideAIds, setSideAIds] = useState<number[]>([]);
   const [sideBIds, setSideBIds] = useState<number[]>([]);
 
   const byId = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
-  const sideAPlayers = sideAIds.map((id) => byId.get(id)).filter((p): p is CalculatorPlayer => Boolean(p));
-  const sideBPlayers = sideBIds.map((id) => byId.get(id)).filter((p): p is CalculatorPlayer => Boolean(p));
+
+  const sideAPlayers = useMemo(
+    () =>
+      sideAIds
+        .map((id) => byId.get(id))
+        .filter((p): p is CalculatorPlayer => Boolean(p))
+        .sort((a, b) => b.value - a.value),
+    [sideAIds, byId],
+  );
+
+  const sideBPlayers = useMemo(
+    () =>
+      sideBIds
+        .map((id) => byId.get(id))
+        .filter((p): p is CalculatorPlayer => Boolean(p))
+        .sort((a, b) => b.value - a.value),
+    [sideBIds, byId],
+  );
 
   const result = compareTradeSides(
     sideAPlayers.map((p) => p.value),
@@ -89,14 +131,16 @@ function TradeSide({
         {players.map((p) => (
           <li
             key={p.id}
-            className="flex items-center justify-between rounded-md bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-800"
+            className="flex items-center justify-between gap-2 rounded-md bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-800"
           >
-            <div className="flex min-w-0 flex-col">
-              <span className="font-medium">{p.name}</span>
-              <span className="text-xs text-zinc-500">
-                {p.position}
-                {p.team ? ` · ${p.team}` : ""} · <span className="font-semibold">{p.value}</span>
-              </span>
+            <div className="flex min-w-0 items-center gap-2">
+              <TeamLogo team={p.team} size={22} />
+              <div className="flex min-w-0 flex-col">
+                <span className="font-medium">{p.name}</span>
+                <span className="text-xs text-zinc-500">
+                  {p.position} · <span className="font-semibold">{p.value}</span>
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -130,6 +174,7 @@ function PlayerSearch({
     const q = query.toLowerCase();
     return allPlayers
       .filter((p) => !excludeIds.includes(p.id) && p.name.toLowerCase().includes(q))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 8);
   }, [query, allPlayers, excludeIds]);
 
@@ -194,12 +239,12 @@ function PlayerSearch({
                 <button
                   type="button"
                   onMouseDown={() => handleSelect(p.id)}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm hover:bg-zinc-50 active:bg-zinc-100 dark:hover:bg-zinc-800 dark:active:bg-zinc-700"
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-zinc-50 active:bg-zinc-100 dark:hover:bg-zinc-800 dark:active:bg-zinc-700"
                 >
-                  <span className="font-medium">{p.name}</span>
+                  <TeamLogo team={p.team} size={20} />
+                  <span className="min-w-0 flex-1 font-medium">{p.name}</span>
                   <span className="shrink-0 text-xs text-zinc-400">
-                    {p.position}
-                    {p.team ? ` · ${p.team}` : ""}{" "}
+                    {p.position}{" "}
                     <span className="font-semibold text-zinc-600 dark:text-zinc-300">{p.value}</span>
                   </span>
                 </button>

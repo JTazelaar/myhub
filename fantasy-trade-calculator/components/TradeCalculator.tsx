@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { compareTradeSides, type TradeComparison } from "@/lib/trades/value";
 
 export type CalculatorPlayer = {
@@ -24,6 +24,8 @@ export function TradeCalculator({ players }: { players: CalculatorPlayer[] }) {
     sideBPlayers.map((p) => p.value),
   );
 
+  const usedIds = useMemo(() => [...sideAIds, ...sideBIds], [sideAIds, sideBIds]);
+
   function addToSide(side: "A" | "B", id: number) {
     const setIds = side === "A" ? setSideAIds : setSideBIds;
     setIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -42,6 +44,7 @@ export function TradeCalculator({ players }: { players: CalculatorPlayer[] }) {
         label="Side A"
         players={sideAPlayers}
         allPlayers={players}
+        excludeIds={usedIds}
         onAdd={(id) => addToSide("A", id)}
         onRemove={(id) => removeFromSide("A", id)}
       />
@@ -49,6 +52,7 @@ export function TradeCalculator({ players }: { players: CalculatorPlayer[] }) {
         label="Side B"
         players={sideBPlayers}
         allPlayers={players}
+        excludeIds={usedIds}
         onAdd={(id) => addToSide("B", id)}
         onRemove={(id) => removeFromSide("B", id)}
       />
@@ -66,53 +70,145 @@ function TradeSide({
   label,
   players,
   allPlayers,
+  excludeIds,
   onAdd,
   onRemove,
 }: {
   label: string;
   players: CalculatorPlayer[];
   allPlayers: CalculatorPlayer[];
+  excludeIds: number[];
   onAdd: (id: number) => void;
   onRemove: (id: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">{label}</h2>
-      <select
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-        value=""
-        onChange={(e) => {
-          const id = Number(e.target.value);
-          if (id) onAdd(id);
-        }}
-      >
-        <option value="">+ Add a player...</option>
-        {allPlayers.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name} ({p.position}
-            {p.team ? ` - ${p.team}` : ""}) - {p.value}
-          </option>
-        ))}
-      </select>
+      <PlayerSearch allPlayers={allPlayers} excludeIds={excludeIds} onSelect={onAdd} />
       <ul className="flex flex-col gap-1">
         {players.map((p) => (
           <li
             key={p.id}
-            className="flex items-center justify-between rounded-md bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-900"
+            className="flex items-center justify-between rounded-md bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-800"
           >
-            <span>
-              {p.name} <span className="text-zinc-500">({p.value})</span>
-            </span>
+            <div className="flex min-w-0 flex-col">
+              <span className="font-medium">{p.name}</span>
+              <span className="text-xs text-zinc-500">
+                {p.position}
+                {p.team ? ` · ${p.team}` : ""}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => onRemove(p.id)}
-              className="-my-2 px-2 py-2 text-zinc-500 hover:text-red-600"
+              className="-my-2 shrink-0 px-2 py-2 text-zinc-400 hover:text-red-500"
             >
-              Remove
+              ✕
             </button>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function PlayerSearch({
+  allPlayers,
+  excludeIds,
+  onSelect,
+}: {
+  allPlayers: CalculatorPlayer[];
+  excludeIds: number[];
+  onSelect: (id: number) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    return allPlayers
+      .filter((p) => !excludeIds.includes(p.id) && p.name.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [query, allPlayers, excludeIds]);
+
+  function handleSelect(id: number) {
+    onSelect(id);
+    setQuery("");
+    setOpen(false);
+    inputRef.current?.focus();
+  }
+
+  const showDropdown = open && query.trim().length > 0;
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search players..."
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 pr-9 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900"
+        />
+        {query ? (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setQuery("");
+              setOpen(false);
+              inputRef.current?.focus();
+            }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-lg leading-none text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            aria-label="Clear"
+          >
+            ×
+          </button>
+        ) : (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </span>
+        )}
+      </div>
+
+      {showDropdown && (
+        <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+          {results.length > 0 ? (
+            results.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onMouseDown={() => handleSelect(p.id)}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm hover:bg-zinc-50 active:bg-zinc-100 dark:hover:bg-zinc-800 dark:active:bg-zinc-700"
+                >
+                  <span className="font-medium">{p.name}</span>
+                  <span className="shrink-0 text-xs text-zinc-400">
+                    {p.position}
+                    {p.team ? ` · ${p.team}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="px-3 py-3 text-sm text-zinc-400">No players found</li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
@@ -124,8 +220,8 @@ function ResultBar({ result }: { result: TradeComparison }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-        <div className="bg-blue-500" style={{ width: `${aPct}%` }} />
-        <div className="bg-orange-500" style={{ width: `${bPct}%` }} />
+        <div className="bg-blue-500 transition-all" style={{ width: `${aPct}%` }} />
+        <div className="bg-orange-500 transition-all" style={{ width: `${bPct}%` }} />
       </div>
       <p className="text-sm">
         {result.winner === "tie"

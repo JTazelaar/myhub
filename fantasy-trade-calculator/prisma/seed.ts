@@ -5,7 +5,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const PLAYERS = [
+/**
+ * Illustrative dev data spanning the value tiers (roster-worthy ~30,
+ * starter ~50, elite ~99). Not real current rankings -- replace/edit from
+ * the Admin Players page once you have your own values.
+ */
+const PLAYERS: { name: string; position: string; team: string; value: number }[] = [
   { name: "Christian McCaffrey", position: "RB", team: "SF", value: 99 },
   { name: "Justin Jefferson", position: "WR", team: "MIN", value: 96 },
   { name: "Tyreek Hill", position: "WR", team: "MIA", value: 95 },
@@ -30,21 +35,36 @@ async function main() {
   const snapshot = await prisma.rankingSnapshot.upsert({
     where: { season_week: { season: 2026, week: 1 } },
     update: {},
-    create: { season: 2026, week: 1, label: "2026 Week 1 (seed data)", notes: "Illustrative starter values." },
+    create: {
+      season: 2026,
+      week: 1,
+      label: "2026 Week 1 (seed data)",
+      notes: "Illustrative starter values for local development. Not real rankings.",
+    },
   });
+
   for (const p of PLAYERS) {
     const player = await prisma.player.upsert({
       where: { name: p.name },
       update: { position: p.position, team: p.team },
       create: { name: p.name, position: p.position, team: p.team },
     });
+
     await prisma.playerValue.upsert({
-      where: { playerId_snapshotId: { playerId: player.id, snapshotId: snapshot.id } },
+      where: { playerId_snapshotId_source: { playerId: player.id, snapshotId: snapshot.id, source: "manual" } },
       update: { value: p.value },
-      create: { playerId: player.id, snapshotId: snapshot.id, value: p.value },
+      create: { playerId: player.id, snapshotId: snapshot.id, source: "manual", value: p.value },
     });
   }
-  console.log(`Seeded ${PLAYERS.length} players.`);
+
+  console.log(`Seeded ${PLAYERS.length} players into snapshot "${snapshot.label}".`);
 }
 
-main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => prisma.$disconnect());
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -23,7 +23,10 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
+
+      - name: Generate Prisma client
+        run: npx prisma generate
 
       - name: Run FantasyCalc import
         run: npm run import:fantasycalc

@@ -14,6 +14,8 @@
     "import:fantasycalc": "tsx scripts/import-fantasycalc.ts",
     "import:sleeper": "tsx scripts/import-sleeper.ts",
     "import:keeptradecut": "tsx scripts/import-keeptradecut.ts",
+    "import:colleges": "tsx scripts/import-sleeper-colleges.ts",
+    "import:weekly-stats": "tsx scripts/import-weekly-stats.ts",
     "find-leagues": "tsx scripts/find-sleeper-leagues.ts"
   },
   "dependencies": {

@@ -11,12 +11,15 @@ model Player {
   name      String   @unique
   position  String
   team      String?
+  college   String?
+  sleeperId String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   aliases       PlayerAlias[]
   values        PlayerValue[]
+  weeklyStats   PlayerWeeklyStats[]
   votesAsA      MatchupVote[] @relation("PlayerA")
   votesAsB      MatchupVote[] @relation("PlayerB")
   votesAsWinner MatchupVote[] @relation("Winner")
@@ -68,11 +71,39 @@ model PlayerValue {
   @@map("player_values")
 }
 
+model PlayerWeeklyStats {
+  id         Int      @id @default(autoincrement())
+  playerId   Int
+  season     Int
+  week       Int
+  seasonType String   @default("regular") // "pre" | "regular"
+  ptsStd     Float?
+  ptsHalfPpr Float?
+  ptsPpr     Float?
+  passYd     Int?
+  passTd     Int?
+  passInt    Int?
+  rushYd     Int?
+  rushTd     Int?
+  rec        Int?
+  recYd      Int?
+  recTd      Int?
+  locked     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, season, week, seasonType])
+  @@map("player_weekly_stats")
+}
+
 model MatchupVote {
   id        Int      @id @default(autoincrement())
   playerAId Int
   playerBId Int
   winnerId  Int
+  format    String   @default("halfppr_1qb")
   createdAt DateTime @default(now())
 
   playerA Player @relation("PlayerA", fields: [playerAId], references: [id], onDelete: Cascade)

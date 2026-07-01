@@ -18,14 +18,18 @@ export default async function RankingsPage() {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
         <AdminNotice />
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Rankings Comparison</h1>
-          <Link href="/admin" className="text-sm font-medium text-blue-600 hover:underline">
+          <h1 className="text-2xl font-bold text-white">Rankings Comparison</h1>
+          <Link
+            href="/admin"
+            className="rounded-full px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          >
             ← Players
           </Link>
         </div>
-        <p className="text-sm text-zinc-500">
+        <div className="glass-card rounded-2xl px-6 py-10 text-center text-sm text-white/40">
           No snapshot yet. Run an import first to populate player values.
-        </p>
+        </div>
       </div>
     );
   }
@@ -38,12 +42,10 @@ export default async function RankingsPage() {
     include: { player: { select: { id: true, name: true, position: true, team: true } } },
   });
 
-  // Determine which sources actually have data
   const presentSources = COMPARISON_SOURCES.filter((src) =>
     values.some((v) => v.source === src),
   );
 
-  // Group by player
   const playerMap = new Map<
     number,
     { name: string; position: string; team: string | null; bySource: Record<string, number> }
@@ -60,7 +62,6 @@ export default async function RankingsPage() {
     playerMap.get(v.playerId)!.bySource[v.source] = v.value;
   }
 
-  // Compute consensus (average across all present sources for this player)
   const rows = [...playerMap.entries()].map(([playerId, { name, position, team, bySource }]) => {
     const vals = presentSources
       .map((s) => bySource[s])
@@ -69,10 +70,8 @@ export default async function RankingsPage() {
     return { playerId, name, position, team, bySource, consensus };
   });
 
-  // Sort by consensus descending (players missing all sources fall to bottom)
   rows.sort((a, b) => (b.consensus ?? -1) - (a.consensus ?? -1));
 
-  // Compute per-source ranks
   const rankBySource: Record<string, Map<number, number>> = {};
   for (const src of presentSources) {
     const sorted = [...rows]
@@ -83,7 +82,6 @@ export default async function RankingsPage() {
     rankBySource[src] = m;
   }
 
-  // Merge rank maps into each row for serialization to the client component
   const clientRows = rows.map((r) => ({
     ...r,
     rankBySource: Object.fromEntries(
@@ -97,25 +95,35 @@ export default async function RankingsPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Rankings Comparison</h1>
-          <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-bold text-white">Rankings Comparison</h1>
+          <p className="mt-0.5 text-sm text-white/40">
             {snapshot.label} · Week {snapshot.week}, {snapshot.season}
           </p>
         </div>
-        <Link href="/admin" className="text-sm font-medium text-blue-600 hover:underline">
+        <Link
+          href="/admin"
+          className="rounded-full px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+        >
           ← Players
         </Link>
       </div>
 
       {presentSources.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 px-4 py-8 text-center dark:border-zinc-800">
-          <p className="text-sm text-zinc-500">
+        <div className="glass-card rounded-2xl px-6 py-10 text-center">
+          <p className="text-sm text-white/40">
             No source data yet. Run{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            <code
+              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/60"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
               npm run import:fantasycalc
             </code>{" "}
             or{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            <code
+              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/60"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
               npm run import:keeptradecut
             </code>{" "}
             to populate values.

@@ -1,0 +1,46 @@
+name: Import Weekly Stats (Sleeper)
+
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "NFL week number (leave blank for current week)"
+        required: false
+      season:
+        description: "Season year (leave blank for current season)"
+        required: false
+      preseason:
+        description: "Import preseason stats"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    defaults:
+      run:
+        working-directory: fantasy-trade-calculator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Import weekly stats
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.week }}" ]; then ARGS="$ARGS --week ${{ github.event.inputs.week }}"; fi
+          if [ -n "${{ github.event.inputs.season }}" ]; then ARGS="$ARGS --season ${{ github.event.inputs.season }}"; fi
+          if [ "${{ github.event.inputs.preseason }}" = "true" ]; then ARGS="$ARGS --preseason"; fi
+          npm run import:weekly-stats -- $ARGS

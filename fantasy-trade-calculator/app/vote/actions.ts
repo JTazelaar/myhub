@@ -1,9 +1,14 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { recordVote } from "@/lib/votes/votes";
 
-export async function submitVoteAction(playerAId: number, playerBId: number, winnerId: number) {
-  await recordVote(playerAId, playerBId, winnerId);
-  revalidatePath("/vote");
+export async function submitVoteAction(
+  playerAId: number,
+  playerBId: number,
+  winnerId: number,
+  formatId: string,
+) {
+  await recordVote(playerAId, playerBId, winnerId, formatId);
+  redirect(`/vote?format=${encodeURIComponent(formatId)}`);
 }

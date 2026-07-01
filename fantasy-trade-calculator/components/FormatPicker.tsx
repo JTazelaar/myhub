@@ -11,7 +11,13 @@ function parseFormat(id: string): { scoring: Format["scoring"]; qbs: 1 | 2; tePr
   return { scoring: f.scoring, qbs: f.qbs, tePremium: f.tePremium };
 }
 
-type Props = { formatId: string };
+type Props = {
+  formatId: string;
+  /** URL path to navigate to on change (default "/") */
+  basePath?: string;
+  /** Whether to show the TE Premium toggle (default true) */
+  showTePremium?: boolean;
+};
 
 const SCORING_OPTIONS: { id: Format["scoring"]; label: string }[] = [
   { id: "standard", label: "Standard" },
@@ -42,7 +48,7 @@ const pillDisabled = {
   cursor: "not-allowed",
 } as const;
 
-export function FormatPicker({ formatId }: Props) {
+export function FormatPicker({ formatId, basePath = "/", showTePremium = true }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -53,9 +59,9 @@ export function FormatPicker({ formatId }: Props) {
     const id = resolved ?? DEFAULT_FORMAT_ID;
     const params = new URLSearchParams(searchParams.toString());
     params.set("format", id);
-    params.delete("pos"); // reset position filter on format change
+    params.delete("pos");
     startTransition(() => {
-      router.push(`/?${params.toString()}`);
+      router.push(`${basePath}?${params.toString()}`);
     });
   }
 
@@ -83,7 +89,7 @@ export function FormatPicker({ formatId }: Props) {
         ))}
       </div>
 
-      {/* Row 2: QB format + TE Premium */}
+      {/* Row 2: QB format + optional TE Premium */}
       <div className="flex flex-wrap gap-1.5">
         <span className="flex items-center pr-1 text-xs font-medium uppercase tracking-wider text-white/30">
           Format
@@ -103,23 +109,26 @@ export function FormatPicker({ formatId }: Props) {
           Superflex
         </button>
 
-        <span className="mx-1 flex items-center text-white/15">|</span>
-
-        <button
-          className={pillBase}
-          disabled={!tePremiumAvailable}
-          style={
-            !tePremiumAvailable
-              ? pillDisabled
-              : tePremium
-                ? { ...pillActive, border: "1px solid rgba(52,211,153,0.35)", color: "rgba(110,231,183,0.94)" }
-                : pillInactive
-          }
-          onClick={() => tePremiumAvailable && navigate(scoring, qbs, !tePremium)}
-          title={!tePremiumAvailable ? "TE Premium requires 1QB + PPR or ½PPR" : undefined}
-        >
-          TE+
-        </button>
+        {showTePremium && (
+          <>
+            <span className="mx-1 flex items-center text-white/15">|</span>
+            <button
+              className={pillBase}
+              disabled={!tePremiumAvailable}
+              style={
+                !tePremiumAvailable
+                  ? pillDisabled
+                  : tePremium
+                    ? { ...pillActive, border: "1px solid rgba(52,211,153,0.35)", color: "rgba(110,231,183,0.94)" }
+                    : pillInactive
+              }
+              onClick={() => tePremiumAvailable && navigate(scoring, qbs, !tePremium)}
+              title={!tePremiumAvailable ? "TE Premium requires 1QB + PPR or ½PPR" : undefined}
+            >
+              TE+
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

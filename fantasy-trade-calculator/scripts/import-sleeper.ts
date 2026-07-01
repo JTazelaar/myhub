@@ -15,8 +15,9 @@
  *      current snapshot.
  *
  * Configuration (environment variables):
- *   DATABASE_URL          - Postgres connection string (required)
- *   SLEEPER_LEAGUE_IDS    - Comma-separated Sleeper league IDs (required)
+ *   DATABASE_URL          – Postgres connection string (required)
+ *   SLEEPER_LEAGUE_IDS    – Comma-separated Sleeper league IDs (required)
+ *   SLEEPER_FORMAT        – Format ID to store nudges under (default: halfppr_1qb)
  *
  * To find league IDs for a username:
  *   npx tsx scripts/find-sleeper-leagues.ts <sleeper-username>
@@ -29,8 +30,10 @@ import "dotenv/config";
 import { prisma } from "../lib/db/prisma";
 import { getLatestValuesMap, getOrCreateCurrentSnapshot } from "../lib/rankings/snapshots";
 import { sidePower } from "../lib/trades/value";
+import { DEFAULT_FORMAT_ID } from "../lib/formats";
 
 const SLEEPER_BASE = "https://api.sleeper.app/v1";
+const SLEEPER_FORMAT = process.env.SLEEPER_FORMAT ?? DEFAULT_FORMAT_ID;
 const WEEKS_TO_LOOK_BACK = 4;
 const MAX_NUDGE_PER_RUN = 3;   // max value points to move a player per run
 const MIN_TRADES_FOR_SIGNAL = 3; // ignore players seen in fewer trades
@@ -42,7 +45,7 @@ const MIN_TRADES_FOR_SIGNAL = 3; // ignore players seen in fewer trades
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/\./g, "")                          // A.J. -> aj
+    .replace(/\./g, "")                          // A.J. → aj
     .replace(/\s+(jr|sr|ii|iii|iv|v)$/i, "")    // strip generational suffixes
     .replace(/\s+/g, " ")
     .trim();
@@ -78,7 +81,7 @@ type SleeperTransaction = {
 
 type NflState = { week: number };
 
-/** Returns a map of normalised player name -> Sleeper player ID. */
+/** Returns a map of normalised player name → Sleeper player ID. */
 async function buildSleeperNameMap(): Promise<Map<string, string>> {
   console.log("Fetching Sleeper player list...");
   const raw = await fetchJson<Record<string, SleeperPlayer>>(`${SLEEPER_BASE}/players/nfl`);
@@ -154,7 +157,7 @@ async function main() {
     const sleeperNameMap = await buildSleeperNameMap();
 
     const ourPlayers = await prisma.player.findMany({ where: { isActive: true } });
-    const sleeperToOurId = new Map<string, number>(); // sleeperId -> ourPlayerId
+    const sleeperToOurId = new Map<string, number>(); // sleeperId → ourPlayerId
 
     let matched = 0;
     for (const p of ourPlayers) {
@@ -166,18 +169,18 @@ async function main() {
     }
     console.log(`Mapped ${matched}/${ourPlayers.length} players to Sleeper IDs`);
 
-    const valuesMap = await getLatestValuesMap();
+    const valuesMap = await getLatestValuesMap(SLEEPER_FORMAT);
 
     // -----------------------------------------------------------------------
     // Determine the week range to fetch
     // -----------------------------------------------------------------------
     const { week: currentWeek } = await fetchJson<NflState>(`${SLEEPER_BASE}/state/nfl`);
     const startWeek = Math.max(1, currentWeek - WEEKS_TO_LOOK_BACK);
-    console.log(`Fetching weeks ${startWeek}-${currentWeek} from ${leagueIds.length} league(s)`);
+    console.log(`Fetching weeks ${startWeek}–${currentWeek} from ${leagueIds.length} league(s)`);
 
     // -----------------------------------------------------------------------
     // Collect trade signals
-    // signals: ourPlayerId -> { count, totalAdjustment }
+    // signals: ourPlayerId → { count, totalAdjustment }
     // -----------------------------------------------------------------------
     const signals = new Map<number, { count: number; totalAdjustment: number }>();
     let totalTrades = 0;
@@ -203,6 +206,8 @@ async function main() {
             const total = powerA + powerB;
             if (total === 0) continue;
 
+            // imbalance > 0  →  pkgA is undervalued (rosterB gave up more)
+            // imbalance < 0  →  pkgB is undervalued (rosterA gave up more)
             const imbalance = (powerB - powerA) / total;
             const nudge = imbalance * MAX_NUDGE_PER_RUN;
 
@@ -251,9 +256,22 @@ async function main() {
       await prisma.$transaction(
         updates.map(({ playerId, value }) =>
           prisma.playerValue.upsert({
-            where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "sleeper" } },
+            where: {
+              playerId_snapshotId_source_format: {
+                playerId,
+                snapshotId: snapshot.id,
+                source: "sleeper",
+                format: SLEEPER_FORMAT,
+              },
+            },
             update: { value },
-            create: { playerId, snapshotId: snapshot.id, source: "sleeper", value },
+            create: {
+              playerId,
+              snapshotId: snapshot.id,
+              source: "sleeper",
+              format: SLEEPER_FORMAT,
+              value,
+            },
           }),
         ),
       );

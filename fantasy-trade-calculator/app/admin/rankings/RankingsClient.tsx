@@ -26,9 +26,11 @@ const POSITIONS = ["All", "QB", "RB", "WR", "TE"];
 export function RankingsClient({
   rows,
   sources,
+  formatLabel,
 }: {
   rows: Row[];
   sources: string[];
+  formatLabel: string;
 }) {
   const [position, setPosition] = useState("All");
 
@@ -146,7 +148,7 @@ export function RankingsClient({
       </div>
 
       <p className="text-xs text-white/30">
-        {filtered.length} player{filtered.length !== 1 ? "s" : ""} · Values on 1–99 scale ·{" "}
+        {filtered.length} player{filtered.length !== 1 ? "s" : ""} · {formatLabel} · Values on 1–99 scale ·{" "}
         <span className="text-emerald-400/70">Green</span> = source rates higher than consensus ·{" "}
         <span className="text-amber-400/70">Amber</span> = source rates lower
       </p>
@@ -170,9 +172,9 @@ function SourceCell({
   const diff = consensus != null ? value - consensus : 0;
   const color =
     diff >= 10
-      ? "rgba(52, 211, 153, 0.90)"
+      ? "rgba(52, 211, 153, 0.90)"   // emerald-400
       : diff <= -10
-        ? "rgba(251, 191, 36, 0.85)"
+        ? "rgba(251, 191, 36, 0.85)"  // amber-400
         : "rgba(255, 255, 255, 0.80)";
 
   return (

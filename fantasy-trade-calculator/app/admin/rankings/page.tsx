@@ -1,16 +1,25 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AdminNotice } from "@/components/AdminNotice";
 import { prisma } from "@/lib/db/prisma";
 import { getLatestSnapshot } from "@/lib/rankings/snapshots";
+import { FORMAT_MAP, FORMATS, DEFAULT_FORMAT_ID } from "@/lib/formats";
 import { RankingsClient } from "./RankingsClient";
 
 export const dynamic = "force-dynamic";
 
-// Sources shown as columns. "manual" is an override and is excluded from
-// the comparison — it blends into the consensus via getLatestValuesMap().
+// Sources shown as columns in the comparison table.
 const COMPARISON_SOURCES = ["fantasycalc", "keeptradecut"];
 
-export default async function RankingsPage() {
+export default async function RankingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ format?: string }>;
+}) {
+  const { format: rawFormat } = await searchParams;
+  const formatId = FORMAT_MAP.has(rawFormat ?? "") ? (rawFormat as string) : DEFAULT_FORMAT_ID;
+  const format = FORMAT_MAP.get(formatId)!;
+
   const snapshot = await getLatestSnapshot();
 
   if (!snapshot) {
@@ -38,6 +47,7 @@ export default async function RankingsPage() {
     where: {
       snapshotId: snapshot.id,
       source: { in: COMPARISON_SOURCES },
+      format: formatId,
     },
     include: { player: { select: { id: true, name: true, position: true, team: true } } },
   });
@@ -66,7 +76,8 @@ export default async function RankingsPage() {
     const vals = presentSources
       .map((s) => bySource[s])
       .filter((v): v is number => v != null);
-    const consensus = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b) / vals.length) : null;
+    const consensus =
+      vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b) / vals.length) : null;
     return { playerId, name, position, team, bySource, consensus };
   });
 
@@ -109,28 +120,50 @@ export default async function RankingsPage() {
         </Link>
       </div>
 
+      {/* Format tabs */}
+      <div className="flex flex-wrap gap-1.5">
+        {FORMATS.map((f) => {
+          const isActive = f.id === formatId;
+          return (
+            <Link
+              key={f.id}
+              href={`/admin/rankings?format=${f.id}`}
+              className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+              style={
+                isActive
+                  ? {
+                      background: "rgba(255,255,255,0.16)",
+                      border: "1px solid rgba(255,255,255,0.22)",
+                      color: "rgba(255,255,255,0.92)",
+                    }
+                  : {
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.40)",
+                    }
+              }
+            >
+              {f.shortLabel}
+            </Link>
+          );
+        })}
+      </div>
+
       {presentSources.length === 0 ? (
         <div className="glass-card rounded-2xl px-6 py-10 text-center">
           <p className="text-sm text-white/40">
-            No source data yet. Run{" "}
+            No source data for <strong className="text-white/60">{format.label}</strong>. Run{" "}
             <code
               className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/60"
               style={{ background: "rgba(255,255,255,0.08)" }}
             >
               npm run import:fantasycalc
             </code>{" "}
-            or{" "}
-            <code
-              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/60"
-              style={{ background: "rgba(255,255,255,0.08)" }}
-            >
-              npm run import:keeptradecut
-            </code>{" "}
             to populate values.
           </p>
         </div>
       ) : (
-        <RankingsClient rows={clientRows} sources={presentSources} />
+        <RankingsClient rows={clientRows} sources={presentSources} formatLabel={format.label} />
       )}
     </div>
   );

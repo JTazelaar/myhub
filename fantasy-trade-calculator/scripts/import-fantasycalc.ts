@@ -1,11 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Imports player values from FantasyCalc's free public API.
+ * Imports player values from FantasyCalc's free public API for every
+ * supported redraft format (standard/half-PPR/PPR × 1QB/Superflex plus
+ * TE-premium variants).
  *
  * FantasyCalc aggregates 2.6M+ real trades to produce market-consensus
- * player values, updated multiple times per day. This script fetches those
- * values for standard 12-team PPR redraft and maps them onto our 1-99 scale
- * (top player = 99, everyone else scaled linearly).
+ * player values updated multiple times per day. This script fetches values
+ * for each format combination and maps them onto our 1–99 scale.
  *
  * Usage:
  *   npx tsx scripts/import-fantasycalc.ts
@@ -14,6 +15,7 @@
 import "dotenv/config";
 import { prisma } from "../lib/db/prisma";
 import { getOrCreateCurrentSnapshot } from "../lib/rankings/snapshots";
+import { FORMATS } from "../lib/formats";
 
 const FC_API = "https://api.fantasycalc.com/values/current";
 
@@ -41,53 +43,87 @@ async function main() {
   });
 
   try {
-    const url = `${FC_API}?isDynasty=false&numQbs=1&ppr=1&numTeams=12`;
-    console.log(`Fetching FantasyCalc values...`);
+    const snapshot = await getOrCreateCurrentSnapshot();
 
-    const res = await fetch(url, {
-      headers: { "User-Agent": "fantasy-trade-calculator/1.0" },
-    });
-    if (!res.ok) throw new Error(`FantasyCalc API returned ${res.status}`);
-
-    const data = (await res.json()) as FcEntry[];
-    console.log(`Got ${data.length} players from FantasyCalc`);
-
-    // Normalize their scale (0–~9000) onto our 1–99 scale
-    const maxFcValue = Math.max(...data.map((d) => d.value));
-    if (maxFcValue === 0) throw new Error("FantasyCalc returned all-zero values");
-
-    // Build name → our player ID lookup
+    // Build name → player ID lookup once for all formats
     const ourPlayers = await prisma.player.findMany({ where: { isActive: true } });
     const byName = new Map(ourPlayers.map((p) => [normalizeName(p.name), p.id]));
 
-    const snapshot = await getOrCreateCurrentSnapshot();
-    const updates: { playerId: number; value: number }[] = [];
-    let unmatched = 0;
+    let totalUpdated = 0;
+    let totalUnmatched = 0;
+    const formatResults: string[] = [];
 
-    for (const entry of data) {
-      if (entry.value === 0) continue;
-      const playerId = byName.get(normalizeName(entry.player.name));
-      if (!playerId) {
-        unmatched++;
+    for (const format of FORMATS) {
+      const params = new URLSearchParams(
+        Object.entries(format.fcParams).map(([k, v]) => [k, String(v)]),
+      );
+      const url = `${FC_API}?${params}`;
+      console.log(`Fetching ${format.label}...`);
+
+      const res = await fetch(url, {
+        headers: { "User-Agent": "fantasy-trade-calculator/1.0" },
+      });
+      if (!res.ok) {
+        console.warn(`FantasyCalc returned ${res.status} for ${format.id} — skipping`);
         continue;
       }
-      const scaled = Math.max(1, Math.min(99, Math.round((entry.value / maxFcValue) * 98) + 1));
-      updates.push({ playerId, value: scaled });
+
+      const data = (await res.json()) as FcEntry[];
+      const maxFcValue = Math.max(...data.map((d) => d.value));
+      if (maxFcValue === 0) {
+        console.warn(`Format ${format.id} returned all-zero values — skipping`);
+        continue;
+      }
+
+      const updates: { playerId: number; value: number }[] = [];
+      let unmatched = 0;
+
+      for (const entry of data) {
+        if (entry.value === 0) continue;
+        const playerId = byName.get(normalizeName(entry.player.name));
+        if (!playerId) {
+          unmatched++;
+          continue;
+        }
+        const scaled = Math.max(1, Math.min(99, Math.round((entry.value / maxFcValue) * 98) + 1));
+        updates.push({ playerId, value: scaled });
+      }
+
+      if (updates.length > 0) {
+        await prisma.$transaction(
+          updates.map(({ playerId, value }) =>
+            prisma.playerValue.upsert({
+              where: {
+                playerId_snapshotId_source_format: {
+                  playerId,
+                  snapshotId: snapshot.id,
+                  source: "fantasycalc",
+                  format: format.id,
+                },
+              },
+              update: { value },
+              create: {
+                playerId,
+                snapshotId: snapshot.id,
+                source: "fantasycalc",
+                format: format.id,
+                value,
+              },
+            }),
+          ),
+        );
+      }
+
+      totalUpdated += updates.length;
+      totalUnmatched = Math.max(totalUnmatched, unmatched);
+      formatResults.push(`${format.id}:${updates.length}`);
+      console.log(`  → updated ${updates.length}, unmatched ${unmatched}`);
     }
 
-    if (updates.length > 0) {
-      await prisma.$transaction(
-        updates.map(({ playerId, value }) =>
-          prisma.playerValue.upsert({
-            where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "fantasycalc" } },
-            update: { value },
-            create: { playerId, snapshotId: snapshot.id, source: "fantasycalc", value },
-          }),
-        ),
-      );
-    }
-
-    const summary = `Fetched ${data.length} players from FantasyCalc. Updated ${updates.length}, skipped ${unmatched} unmatched.`;
+    const summary =
+      `Imported ${FORMATS.length} formats from FantasyCalc. ` +
+      `Total player-format pairs updated: ${totalUpdated}. ` +
+      `Formats: ${formatResults.join(", ")}`;
     console.log(summary);
 
     await prisma.importRun.update({

@@ -17,6 +17,7 @@
  * Configuration (environment variables):
  *   DATABASE_URL          – Postgres connection string (required)
  *   SLEEPER_LEAGUE_IDS    – Comma-separated Sleeper league IDs (required)
+ *   SLEEPER_FORMAT        – Format ID to store nudges under (default: halfppr_1qb)
  *
  * To find league IDs for a username:
  *   npx tsx scripts/find-sleeper-leagues.ts <sleeper-username>
@@ -29,8 +30,10 @@ import "dotenv/config";
 import { prisma } from "../lib/db/prisma";
 import { getLatestValuesMap, getOrCreateCurrentSnapshot } from "../lib/rankings/snapshots";
 import { sidePower } from "../lib/trades/value";
+import { DEFAULT_FORMAT_ID } from "../lib/formats";
 
 const SLEEPER_BASE = "https://api.sleeper.app/v1";
+const SLEEPER_FORMAT = process.env.SLEEPER_FORMAT ?? DEFAULT_FORMAT_ID;
 const WEEKS_TO_LOOK_BACK = 4;
 const MAX_NUDGE_PER_RUN = 3;   // max value points to move a player per run
 const MIN_TRADES_FOR_SIGNAL = 3; // ignore players seen in fewer trades
@@ -166,7 +169,7 @@ async function main() {
     }
     console.log(`Mapped ${matched}/${ourPlayers.length} players to Sleeper IDs`);
 
-    const valuesMap = await getLatestValuesMap();
+    const valuesMap = await getLatestValuesMap(SLEEPER_FORMAT);
 
     // -----------------------------------------------------------------------
     // Determine the week range to fetch
@@ -253,9 +256,22 @@ async function main() {
       await prisma.$transaction(
         updates.map(({ playerId, value }) =>
           prisma.playerValue.upsert({
-            where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "sleeper" } },
+            where: {
+              playerId_snapshotId_source_format: {
+                playerId,
+                snapshotId: snapshot.id,
+                source: "sleeper",
+                format: SLEEPER_FORMAT,
+              },
+            },
             update: { value },
-            create: { playerId, snapshotId: snapshot.id, source: "sleeper", value },
+            create: {
+              playerId,
+              snapshotId: snapshot.id,
+              source: "sleeper",
+              format: SLEEPER_FORMAT,
+              value,
+            },
           }),
         ),
       );

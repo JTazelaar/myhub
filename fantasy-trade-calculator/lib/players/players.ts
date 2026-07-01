@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
-import { getLatestValuesMap, getOrCreateCurrentSnapshot } from "@/lib/rankings/snapshots";
+import {
+  getLatestValuesMap,
+  getOrCreateCurrentSnapshot,
+} from "@/lib/rankings/snapshots";
+import { DEFAULT_FORMAT_ID } from "@/lib/formats";
 
 export async function listPlayers() {
   return prisma.player.findMany({ orderBy: { name: "asc" } });
@@ -23,14 +27,22 @@ export async function createPlayer(input: {
   });
 }
 
-/** Sets a player's manual value override in the current snapshot. */
+/** Sets a player's manual value override in the current snapshot.
+ *  Manual overrides use format "all" so they apply across every format. */
 export async function setPlayerValue(playerId: number, value: number) {
   const snapshot = await getOrCreateCurrentSnapshot();
 
   return prisma.playerValue.upsert({
-    where: { playerId_snapshotId_source: { playerId, snapshotId: snapshot.id, source: "manual" } },
+    where: {
+      playerId_snapshotId_source_format: {
+        playerId,
+        snapshotId: snapshot.id,
+        source: "manual",
+        format: "all",
+      },
+    },
     update: { value },
-    create: { playerId, snapshotId: snapshot.id, source: "manual", value },
+    create: { playerId, snapshotId: snapshot.id, source: "manual", format: "all", value },
   });
 }
 
@@ -38,8 +50,13 @@ export type PlayerWithValue = Awaited<ReturnType<typeof listPlayers>>[number] & 
   value: number | null;
 };
 
-export async function listPlayersWithValues(): Promise<PlayerWithValue[]> {
-  const [players, valuesMap] = await Promise.all([listPlayers(), getLatestValuesMap()]);
+export async function listPlayersWithValues(
+  format = DEFAULT_FORMAT_ID,
+): Promise<PlayerWithValue[]> {
+  const [players, valuesMap] = await Promise.all([
+    listPlayers(),
+    getLatestValuesMap(format),
+  ]);
 
   return players.map((player) => ({
     ...player,

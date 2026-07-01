@@ -50,10 +50,24 @@ async function main() {
       create: { name: p.name, position: p.position, team: p.team },
     });
 
+    // Manual overrides use format "all" so they apply to every format context.
     await prisma.playerValue.upsert({
-      where: { playerId_snapshotId_source: { playerId: player.id, snapshotId: snapshot.id, source: "manual" } },
+      where: {
+        playerId_snapshotId_source_format: {
+          playerId: player.id,
+          snapshotId: snapshot.id,
+          source: "manual",
+          format: "all",
+        },
+      },
       update: { value: p.value },
-      create: { playerId: player.id, snapshotId: snapshot.id, source: "manual", value: p.value },
+      create: {
+        playerId: player.id,
+        snapshotId: snapshot.id,
+        source: "manual",
+        format: "all",
+        value: p.value,
+      },
     });
   }
 

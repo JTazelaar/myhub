@@ -18,6 +18,7 @@ export default async function AdminPlayersPage() {
         <div className="flex items-center gap-2">
           {[
             { href: "/admin/rankings", label: "Rankings" },
+            { href: "/admin/ktc", label: "KTC" },
             { href: "/admin/import", label: "Import" },
             { href: "/admin/snapshots", label: "Snapshots" },
           ].map(({ href, label }) => (

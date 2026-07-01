@@ -126,6 +126,7 @@ async function main() {
               },
             }),
           ),
+          { timeout: 60000 },
         );
       }
 

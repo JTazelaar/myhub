@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { FormatPicker } from "@/components/FormatPicker";
+import { TeamLogo } from "@/components/TeamLogo";
 import { getLatestRankings, getLatestSnapshot } from "@/lib/rankings/snapshots";
 import { FORMATS, FORMAT_MAP, DEFAULT_FORMAT_ID } from "@/lib/formats";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 50;
 const POSITIONS = ["All", "QB", "RB", "WR", "TE"];
 
 const POSITION_COLORS: Record<string, string> = {
-  QB: "rgba(96,165,250,0.90)",   // blue
-  RB: "rgba(52,211,153,0.90)",   // emerald
-  WR: "rgba(167,139,250,0.90)",  // violet
-  TE: "rgba(251,146,60,0.90)",   // orange
+  QB: "rgba(96,165,250,0.90)",
+  RB: "rgba(52,211,153,0.90)",
+  WR: "rgba(167,139,250,0.90)",
+  TE: "rgba(251,146,60,0.90)",
 };
 
 function ValueBar({ value }: { value: number }) {
@@ -35,11 +37,12 @@ function ValueBar({ value }: { value: number }) {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string; pos?: string }>;
+  searchParams: Promise<{ format?: string; pos?: string; page?: string }>;
 }) {
-  const { format: rawFormat, pos = "All" } = await searchParams;
+  const { format: rawFormat, pos = "All", page: rawPage } = await searchParams;
   const formatId = FORMAT_MAP.has(rawFormat ?? "") ? (rawFormat as string) : DEFAULT_FORMAT_ID;
   const format = FORMAT_MAP.get(formatId)!;
+  const page = Math.max(1, parseInt(rawPage ?? "1") || 1);
 
   const [snapshot, rankings] = await Promise.all([
     getLatestSnapshot().catch(() => null),
@@ -47,6 +50,20 @@ export default async function HomePage({
   ]);
 
   const filtered = pos === "All" ? rankings : rankings.filter((r) => r.player.position === pos);
+  const totalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const rangeStart = (safePage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePage * PAGE_SIZE, totalCount);
+
+  function pageLink(p: number) {
+    const params = new URLSearchParams();
+    params.set("format", formatId);
+    if (pos !== "All") params.set("pos", pos);
+    if (p > 1) params.set("page", String(p));
+    return `/?${params.toString()}`;
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
@@ -138,7 +155,7 @@ export default async function HomePage({
               boxShadow: "0 16px 48px rgba(0,0,0,0.45)",
             }}
           >
-            {filtered.length === 0 ? (
+            {paginated.length === 0 ? (
               <p className="px-5 py-10 text-center text-sm text-white/35">
                 No players found for this filter.
               </p>
@@ -161,12 +178,12 @@ export default async function HomePage({
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((row, i) => (
+                  {paginated.map((row, i) => (
                     <tr
                       key={row.player.id}
                       className="transition-colors hover:bg-white/[0.03]"
                       style={
-                        i !== filtered.length - 1
+                        i !== paginated.length - 1
                           ? { borderBottom: "1px solid rgba(255,255,255,0.05)" }
                           : {}
                       }
@@ -175,10 +192,16 @@ export default async function HomePage({
                         {row.rank}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="font-medium text-white/88">{row.player.name}</span>
-                        {row.player.team && (
-                          <span className="ml-1.5 text-xs text-white/35">{row.player.team}</span>
-                        )}
+                        <Link
+                          href={`/players/${row.player.id}?format=${formatId}`}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                        >
+                          <TeamLogo team={row.player.team} size={18} />
+                          <span className="font-medium text-white/88">{row.player.name}</span>
+                          {row.player.team && (
+                            <span className="ml-0.5 text-xs text-white/35">{row.player.team}</span>
+                          )}
+                        </Link>
                       </td>
                       <td className="px-3 py-2.5">
                         <span
@@ -200,10 +223,57 @@ export default async function HomePage({
             )}
           </div>
 
-          <p className="text-xs text-white/25">
-            {filtered.length} player{filtered.length !== 1 ? "s" : ""} ·{" "}
-            {snapshot.label} · Values on 1–99 scale
-          </p>
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-white/25">
+                {totalCount > PAGE_SIZE
+                  ? `${rangeStart}–${rangeEnd} of ${totalCount} players`
+                  : `${totalCount} player${totalCount !== 1 ? "s" : ""}`}{" "}
+                · {snapshot.label} · Values on 1–99 scale
+              </p>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  {safePage > 1 ? (
+                    <Link
+                      href={pageLink(safePage - 1)}
+                      className="rounded-full px-3 py-1.5 text-xs font-medium text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                      style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+                    >
+                      ← Prev
+                    </Link>
+                  ) : (
+                    <span
+                      className="rounded-full px-3 py-1.5 text-xs font-medium text-white/20"
+                      style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+                    >
+                      ← Prev
+                    </span>
+                  )}
+                  <span className="px-1 text-xs text-white/30">
+                    {safePage} / {totalPages}
+                  </span>
+                  {safePage < totalPages ? (
+                    <Link
+                      href={pageLink(safePage + 1)}
+                      className="rounded-full px-3 py-1.5 text-xs font-medium text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                      style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+                    >
+                      Next →
+                    </Link>
+                  ) : (
+                    <span
+                      className="rounded-full px-3 py-1.5 text-xs font-medium text-white/20"
+                      style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+                    >
+                      Next →
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

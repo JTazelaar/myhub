@@ -42,8 +42,8 @@ export default async function HomePage({
   const format = FORMAT_MAP.get(formatId)!;
 
   const [snapshot, rankings] = await Promise.all([
-    getLatestSnapshot(),
-    getLatestRankings(formatId),
+    getLatestSnapshot().catch(() => null),
+    getLatestRankings(formatId).catch(() => [] as Awaited<ReturnType<typeof getLatestRankings>>),
   ]);
 
   const filtered = pos === "All" ? rankings : rankings.filter((r) => r.player.position === pos);

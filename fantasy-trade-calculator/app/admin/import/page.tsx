@@ -15,58 +15,79 @@ export default async function ImportPage() {
       <AdminNotice />
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Import History</h1>
-        <Link href="/admin" className="text-sm font-medium text-blue-600 hover:underline">
+        <h1 className="text-2xl font-bold text-white">Import History</h1>
+        <Link
+          href="/admin"
+          className="rounded-full px-3 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+        >
           ← Players
         </Link>
       </div>
 
       {/* FantasyCalc */}
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          FantasyCalc{" "}
-          <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <div className="glass-card flex flex-col gap-2 rounded-2xl p-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-white/85">FantasyCalc</h2>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-medium"
+            style={{
+              background: "rgba(16, 185, 129, 0.15)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
+              color: "rgba(110, 231, 183, 0.90)",
+            }}
+          >
             recommended
           </span>
-        </h2>
-        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+        </div>
+        <p className="text-sm text-white/50">
           Pulls market-consensus values derived from 2.6M+ real trades. Free public API, no
           configuration needed. Runs automatically every day at 7am UTC.
         </p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-white/50">
           To run manually:{" "}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+          <code
+            className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/70"
+            style={{ background: "rgba(255,255,255,0.08)" }}
+          >
             npm run import:fantasycalc
           </code>
         </p>
       </div>
 
       {/* Sleeper */}
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Sleeper leagues
-        </h2>
-        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+      <div className="glass-card flex flex-col gap-2 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold text-white/85">Sleeper leagues</h2>
+        <p className="text-sm text-white/50">
           Pulls trades from your own Sleeper leagues and applies a small nudge on top of the base
           values. Useful for personalizing to your league&apos;s trade market. Requires setup.
         </p>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
+        <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-white/50">
           <li>
-            Find your league IDs:
-            <code className="ml-1 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            Find your league IDs:{" "}
+            <code
+              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/70"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
               npm run find-leagues &lt;your-sleeper-username&gt;
             </code>
           </li>
           <li>
             Add{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            <code
+              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/70"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
               SLEEPER_LEAGUE_IDS
             </code>{" "}
             to your GitHub Actions secrets (Settings → Secrets → Actions).
           </li>
           <li>
             The{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs dark:bg-zinc-800">
+            <code
+              className="rounded-lg px-1.5 py-0.5 font-mono text-xs text-white/70"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
               sleeper-import
             </code>{" "}
             workflow then runs every Monday at 6am UTC, or trigger it manually.
@@ -75,20 +96,20 @@ export default async function ImportPage() {
       </div>
 
       {/* Run history */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-white/55 uppercase tracking-wider">
           Recent runs
         </h2>
-        <div className="flex flex-col divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <div className="glass-card flex flex-col divide-glass rounded-2xl">
           {runs.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-zinc-500">No import runs yet.</p>
+            <p className="px-5 py-8 text-center text-sm text-white/35">No import runs yet.</p>
           ) : (
             runs.map((run) => (
-              <div key={run.id} className="flex flex-col gap-1 px-4 py-3">
+              <div key={run.id} className="flex flex-col gap-1 px-5 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <SourceBadge source={run.source} />
-                    <span className="text-sm font-medium">
+                    <span className="text-sm text-white/65">
                       {run.startedAt.toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -101,7 +122,7 @@ export default async function ImportPage() {
                   <StatusBadge status={run.status} />
                 </div>
                 {run.summary && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{run.summary}</p>
+                  <p className="text-xs text-white/35">{run.summary}</p>
                 )}
               </div>
             ))
@@ -116,23 +137,45 @@ function SourceBadge({ source }: { source: string }) {
   const labels: Record<string, string> = {
     fantasycalc: "FantasyCalc",
     sleeper: "Sleeper",
+    keeptradecut: "KTC",
   };
   return (
-    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+    <span
+      className="rounded-lg px-2 py-0.5 font-mono text-xs text-white/60"
+      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)" }}
+    >
       {labels[source] ?? source}
     </span>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    success: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    running: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  const styles: Record<string, { bg: string; border: string; color: string }> = {
+    success: {
+      bg: "rgba(16, 185, 129, 0.12)",
+      border: "rgba(16, 185, 129, 0.22)",
+      color: "rgba(110, 231, 183, 0.88)",
+    },
+    error: {
+      bg: "rgba(239, 68, 68, 0.12)",
+      border: "rgba(239, 68, 68, 0.22)",
+      color: "rgba(252, 165, 165, 0.88)",
+    },
+    running: {
+      bg: "rgba(245, 158, 11, 0.12)",
+      border: "rgba(245, 158, 11, 0.22)",
+      color: "rgba(253, 211, 77, 0.88)",
+    },
+  };
+  const s = styles[status] ?? {
+    bg: "rgba(255,255,255,0.06)",
+    border: "rgba(255,255,255,0.10)",
+    color: "rgba(255,255,255,0.55)",
   };
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? "bg-zinc-100 text-zinc-600"}`}
+      className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}
     >
       {status}
     </span>

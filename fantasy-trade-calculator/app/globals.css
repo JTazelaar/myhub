@@ -1,23 +1,130 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root { --background: #0a0a0a; --foreground: #ededed; }
+/* ─── Glass surface utilities ──────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Base glass — list items, minor surfaces */
+  .glass {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.40),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  /* Card glass — main content panels */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(48px) saturate(200%);
+    -webkit-backdrop-filter: blur(48px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  /* Strong glass — modals, hero panels */
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.11);
+    backdrop-filter: blur(64px) saturate(220%);
+    -webkit-backdrop-filter: blur(64px) saturate(220%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  /* Input glass */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    color: rgba(255, 255, 255, 0.90);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.28);
+  }
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(59, 130, 246, 0.55);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+    outline: none;
+  }
+
+  /* Divider for glass lists */
+  .divide-glass > * + * {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  /* Text hierarchy on glass/dark backgrounds */
+  .text-glass-1 { color: rgba(255, 255, 255, 0.92); }
+  .text-glass-2 { color: rgba(255, 255, 255, 0.62); }
+  .text-glass-3 { color: rgba(255, 255, 255, 0.38); }
+  .text-glass-link { color: rgba(147, 197, 253, 0.90); }
+}
+
+/* ─── Global reset & base ──────────────────────────────────────────────────── */
+
+html {
+  color-scheme: dark;
+  height: 100%;
+}
+
+/* Fixed gradient background — stays put while page content scrolls over it.
+   This is what makes the glass surfaces pick up color from behind. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: #060912;
+  background-image:
+    radial-gradient(ellipse 90% 70% at 10% 10%, rgba(109, 40, 217, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 55% at 88% 8%,  rgba(29,  78, 216, 0.20) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 55% at 55% 88%, rgba(5,  150, 105, 0.17) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 3%  88%, rgba(157, 23,  77, 0.13) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.90);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Form controls ────────────────────────────────────────────────────────── */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.3;
+  filter: invert(1);
+}
+
+/* ─── Scrollbar ────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }
+
+/* ─── Focus ring ───────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.70);
+  outline-offset: 2px;
 }

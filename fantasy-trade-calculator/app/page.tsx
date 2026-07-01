@@ -2,15 +2,71 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-8 px-4 py-12 text-center">
-      <div>
-        <h1 className="text-3xl font-bold">Fantasy Trade Calculator</h1>
-        <p className="mt-2 text-zinc-500">Compare players, check trades, and track value over the season.</p>
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-10 px-4 py-16 text-center">
+      {/* Hero */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="glass flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-2xl">
+          🏈
+        </div>
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-white">
+            Fantasy Trade{" "}
+            <span
+              style={{
+                background: "linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #34d399 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Calculator
+            </span>
+          </h1>
+          <p className="mt-3 text-base text-white/50">
+            Compare players, check trades, and track value over the season.
+          </p>
+        </div>
       </div>
+
+      {/* CTAs */}
       <div className="flex w-full flex-col gap-3">
-        <Link href="/calculator" className="rounded-lg bg-blue-600 px-6 py-4 text-base font-semibold text-white hover:bg-blue-700">Trade Calculator</Link>
-        <Link href="/vote" className="rounded-lg bg-zinc-900 px-6 py-4 text-base font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900">Vote: Player vs Player</Link>
-        <Link href="/admin" className="rounded-lg border border-zinc-300 px-6 py-4 text-base font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">Admin</Link>
+        <Link
+          href="/calculator"
+          className="flex items-center justify-center gap-2.5 rounded-2xl px-6 py-5 text-base font-semibold text-white transition-all hover:scale-[1.015] active:scale-[0.98]"
+          style={{
+            background: "rgba(59, 130, 246, 0.18)",
+            border: "1px solid rgba(59, 130, 246, 0.32)",
+            backdropFilter: "blur(40px) saturate(200%)",
+            WebkitBackdropFilter: "blur(40px) saturate(200%)",
+            boxShadow: "0 12px 36px rgba(59, 130, 246, 0.20), inset 0 1px 0 rgba(255,255,255,0.16)",
+          }}
+        >
+          <span className="text-xl">📊</span>
+          Trade Calculator
+        </Link>
+
+        <Link
+          href="/vote"
+          className="flex items-center justify-center gap-2.5 rounded-2xl px-6 py-5 text-base font-semibold text-white transition-all hover:scale-[1.015] active:scale-[0.98]"
+          style={{
+            background: "rgba(139, 92, 246, 0.17)",
+            border: "1px solid rgba(139, 92, 246, 0.30)",
+            backdropFilter: "blur(40px) saturate(200%)",
+            WebkitBackdropFilter: "blur(40px) saturate(200%)",
+            boxShadow: "0 12px 36px rgba(139, 92, 246, 0.18), inset 0 1px 0 rgba(255,255,255,0.14)",
+          }}
+        >
+          <span className="text-xl">⚡</span>
+          Vote: Player vs Player
+        </Link>
+
+        <Link
+          href="/admin"
+          className="glass flex items-center justify-center gap-2.5 rounded-2xl px-6 py-5 text-base font-semibold text-white/60 transition-all hover:text-white/90 hover:scale-[1.015] active:scale-[0.98]"
+        >
+          <span className="text-xl">⚙️</span>
+          Admin
+        </Link>
       </div>
     </div>
   );

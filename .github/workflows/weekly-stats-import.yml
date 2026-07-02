@@ -1,6 +1,9 @@
 name: Import Weekly Stats (Sleeper)
 
 on:
+  # Every Tuesday at 8am UTC (covers Mon night games, runs Aug–Feb)
+  schedule:
+    - cron: "0 8 * * 2"
   workflow_dispatch:
     inputs:
       week:
